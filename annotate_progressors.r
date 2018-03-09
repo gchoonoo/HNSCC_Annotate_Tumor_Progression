@@ -19,12 +19,14 @@ hnsc_data$Progression_FINAL_new = NA
 # "new_tumor_event_after_initial_treatment" = YES
 # "new_neoplasm_event_occurrence_anatomic_site" not NA
 # "followup_treatment_success" = Progressive Disease or Persistent Disease
+# person_neoplasm_cancer_status = WITH TUMOR
 
 # Nonprogressor if they had any one of these (all occurrences of these columns v1-6) and weren't annotated as Progressor based on above criteria:
 # "days_to_new_tumor_event_after_initial_treatment" = NA
 # "new_tumor_event_after_initial_treatment"  = NO
 # "new_neoplasm_event_occurrence_anatomic_site" = NA
 # "followup_treatment_success"  = Complete Remission/Response, Stable Disease, Partial Remission/Response, or NA
+# person_neoplasm_cancer_status = TUMOR FREE
 
 # Observe all occurrences of the above columns:
 names(hnsc_data)[grep("days_to_new_tumor_event_after_initial_treatment", names(hnsc_data))]
@@ -34,6 +36,8 @@ names(hnsc_data)[grep("new_tumor_event_after_initial_treatment", names(hnsc_data
 names(hnsc_data)[grep("new_neoplasm_event_occurrence_anatomic_site", names(hnsc_data))]
 
 names(hnsc_data)[grep("followup_treatment_success", names(hnsc_data))]
+
+names(hnsc_data)[grep("person_neoplasm_cancer_status", names(hnsc_data))]
 
 # Annotate Progressors
 hnsc_data[
@@ -98,7 +102,14 @@ hnsc_data[
           
           hnsc_data[,"followup_treatment_success5"] == "Progressive Disease" | 
           
-          hnsc_data[,"followup_treatment_success5"] == "Persistent Disease"),
+          hnsc_data[,"followup_treatment_success5"] == "Persistent Disease"| 
+          hnsc_data_v2[,"person_neoplasm_cancer_status"] == "WITH TUMOR" | 
+          hnsc_data_v2[,"person_neoplasm_cancer_status1"] == "WITH TUMOR" |
+          hnsc_data_v2[,"person_neoplasm_cancer_status2"] == "WITH TUMOR" |
+          hnsc_data_v2[,"person_neoplasm_cancer_status3"] == "WITH TUMOR" |
+          hnsc_data_v2[,"person_neoplasm_cancer_status4"] == "WITH TUMOR" |
+          hnsc_data_v2[,"person_neoplasm_cancer_status5"] == "WITH TUMOR" |
+          hnsc_data_v2[,"person_neoplasm_cancer_status6"] == "WITH TUMOR"),
   
   "Progression_FINAL_new"] <- "Progressor"
 
@@ -190,7 +201,18 @@ hnsc_data[which((
     
     hnsc_data[,"followup_treatment_success5"] == "Partial Remission/Response" | 
     
-    is.na(hnsc_data[,"followup_treatment_success5"])) & is.na(hnsc_data[,"Progression_FINAL_new"])),"Progression_FINAL_new"] <- "NonProgressor"
+    
+    is.na(hnsc_data[,"followup_treatment_success5"]) |
+    hnsc_data_v2[,"person_neoplasm_cancer_status"] == "TUMOR FREE" | 
+    hnsc_data_v2[,"person_neoplasm_cancer_status1"] == "TUMOR FREE" |
+    hnsc_data_v2[,"person_neoplasm_cancer_status2"] == "TUMOR FREE" |
+    hnsc_data_v2[,"person_neoplasm_cancer_status3"] == "TUMOR FREE" |
+    hnsc_data_v2[,"person_neoplasm_cancer_status4"] == "TUMOR FREE" |
+    hnsc_data_v2[,"person_neoplasm_cancer_status5"] == "TUMOR FREE" |
+    hnsc_data_v2[,"person_neoplasm_cancer_status6"] == "TUMOR FREE") & is.na(hnsc_data[,"Progression_FINAL_new"])),"Progression_FINAL_new"] <- "NonProgressor"
+
+# check 2 patients that have metatastatic sequenced tumors
+hnsc_data_v2[which(hnsc_data_v2[,"bcr_patient_barcode"] %in% c("TCGA-UF-A71A", "TCGA-KU-A6H7")),"Progression_FINAL_new"] <- "Progressor"
 
 # Save data
 write.table(file="clinical_data_annotated.txt", x=hnsc_data, sep="\t", quote=F, row.names=F)
